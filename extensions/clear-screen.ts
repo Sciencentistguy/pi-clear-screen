@@ -1,4 +1,4 @@
-import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Container, type TUI } from "@earendil-works/pi-tui";
 
 interface Transcript {
@@ -19,33 +19,39 @@ function findTranscript(tui: TUI): Transcript | undefined {
 
 // ctx.ui.custom() is the only way for a command to reach the TUI instance;
 // closing immediately means nothing is ever shown.
-const captureTui = (ctx: ExtensionCommandContext) =>
+const captureTui = (ctx: ExtensionContext) =>
 	ctx.ui.custom<TUI>((tui, _theme, _keybindings, done) => {
 		done(tui);
 		return { render: () => [], invalidate() {} };
 	});
 
-export default function clearScreen(pi: ExtensionAPI) {
+async function clearScreen(ctx: ExtensionContext): Promise<void> {
+	if (ctx.mode !== "tui") return;
+	if (!ctx.isIdle()) {
+		ctx.ui.notify("Cannot clear the screen while the agent is running", "warning");
+		return;
+	}
+
+	const tui = await captureTui(ctx);
+	const transcript = findTranscript(tui);
+	if (!transcript) {
+		ctx.ui.notify("clear-screen: unrecognised pi TUI layout", "error");
+		return;
+	}
+
+	transcript.loadedResources.clear();
+	transcript.chat.clear();
+	// A forced render wipes the screen and scrollback, then redraws from the header down.
+	tui.requestRender(true);
+}
+
+export default function (pi: ExtensionAPI) {
 	pi.registerCommand("clear", {
 		description: "Clear the screen (keeps context and session)",
-		handler: async (_args, ctx) => {
-			if (ctx.mode !== "tui") return;
-			if (!ctx.isIdle()) {
-				ctx.ui.notify("Cannot clear the screen while the agent is running", "warning");
-				return;
-			}
-
-			const tui = await captureTui(ctx);
-			const transcript = findTranscript(tui);
-			if (!transcript) {
-				ctx.ui.notify("clear-screen: unrecognised pi TUI layout", "error");
-				return;
-			}
-
-			transcript.loadedResources.clear();
-			transcript.chat.clear();
-			// A forced render wipes the screen and scrollback, then redraws from the header down.
-			tui.requestRender(true);
-		},
+		handler: (_args, ctx) => clearScreen(ctx),
+	});
+	pi.registerShortcut("ctrl+l", {
+		description: "Clear the screen (same as /clear)",
+		handler: clearScreen,
 	});
 }

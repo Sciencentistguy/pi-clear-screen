@@ -1,12 +1,16 @@
 # pi-clear-screen
 
-A [pi](https://docs.pi.dev/latest) extension that adds a `/clear` command.
+A [pi](https://docs.pi.dev/latest) extension that adds a `/clear` command and a `ctrl+l` shortcut.
 
-`/clear` wipes the terminal screen and scrollback, then redraws pi with its startup banner
+Both wipe the terminal screen and scrollback, then redraw pi with its startup banner
 above the editor. Only the on-screen transcript is removed: the agent's context and the
 session file are left untouched, so the conversation continues exactly where it was.
 
-The command is refused while the agent is running, so in-progress output is not lost.
+Clearing is refused while the agent is running, so in-progress output is not lost.
+
+`ctrl+l` installs itself as a shortcut, which replaces pi's default `ctrl+l` binding
+for the model selector. Rebind or disable `app.model.select` in `keybindings.json` if
+you want both.
 
 ## Install
 
