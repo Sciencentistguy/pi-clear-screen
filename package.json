@@ -4,7 +4,7 @@
   "description": "Pi extension adding /clear to wipe the screen while keeping the banner, context, and session intact",
   "type": "module",
   "keywords": ["pi-package"],
-  "license": "MIT",
+  "license": "MPL-2.0",
   "pi": {
     "extensions": ["./extensions/clear-screen.ts"]
   }
